@@ -52,7 +52,8 @@ async function run() {
                 result = await foodsCollection.find().sort({ expiryDate: sortOrder }).toArray();
             }
             else {
-                result = await foodsCollection.find().toArray();
+                const filter = {status: 'available'}
+                result = await foodsCollection.find(filter).toArray();
             }
             res.send(result)
         })
@@ -73,7 +74,7 @@ async function run() {
             const result = await foodsCollection.updateOne(filter, { $set: updateData });
             res.send(result)
         })
-        
+
 
     } finally {
         // Ensures that the client will close when you finish/error
