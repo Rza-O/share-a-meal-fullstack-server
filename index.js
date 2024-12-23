@@ -31,7 +31,7 @@ async function run() {
         const foodsCollection = client.db('FoodsDB').collection('foods');
 
         // Adding food to the food Collection
-        app.post('/add-foods', async (req,res) => {
+        app.post('/add-foods', async (req, res) => {
             const data = req.body;
             console.log(data);
             const result = await foodsCollection.insertOne(data);
@@ -39,8 +39,14 @@ async function run() {
         })
 
         // GET API for all available foods
-        app.get('/all-foods',async (req,res) => {
-            const result = await foodsCollection.find().toArray();
+        app.get('/all-foods', async (req, res) => {
+            const { search, sort } = req.query;
+            const sortOrder = sort === 'asc' ? 1 : -1;
+            let query = {};
+            if (search) {
+                query = { foodName: { $regex: search, $options: 'i' } }
+            }
+            const result = await foodsCollection.find(query).sort({ expiryDate: sortOrder }).toArray();
             res.send(result)
         })
 
@@ -54,7 +60,7 @@ run().catch(console.dir);
 
 
 
-app.get('/', (req,res) => {
+app.get('/', (req, res) => {
     res.send('Meal is Sharing')
 })
 app.listen(port, () => {
