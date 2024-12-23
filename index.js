@@ -58,13 +58,22 @@ async function run() {
         })
 
         // Single food details api
-        app.get('/food/:id', async (req,res) => {
+        app.get('/food/:id', async (req, res) => {
             const { id } = req.params;
             const query = { _id: new ObjectId(id) };
             const result = await foodsCollection.findOne(query);
             res.send(result);
         })
 
+        // Updating data of a single food
+        app.patch('/food/:id', async (req, res) => {
+            const { id } = req.params;
+            const filter = { _id: new ObjectId(id) };
+            const updateData = req.body;
+            const result = await foodsCollection.updateOne(filter, { $set: updateData });
+            res.send(result)
+        })
+        
 
     } finally {
         // Ensures that the client will close when you finish/error
