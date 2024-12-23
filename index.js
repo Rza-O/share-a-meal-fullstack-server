@@ -38,6 +38,12 @@ async function run() {
             res.send(result)
         })
 
+        // GET API for all available foods
+        app.get('/all-foods',async (req,res) => {
+            const result = await foodsCollection.find().toArray();
+            res.send(result)
+        })
+
 
     } finally {
         // Ensures that the client will close when you finish/error
