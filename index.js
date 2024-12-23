@@ -41,12 +41,19 @@ async function run() {
         // GET API for all available foods
         app.get('/all-foods', async (req, res) => {
             const { search, sort } = req.query;
-            const sortOrder = sort === 'asc' ? 1 : -1;
+            let result;
             let query = {};
             if (search) {
                 query = { foodName: { $regex: search, $options: 'i' } }
+                result = await foodsCollection.find(query).toArray();
             }
-            const result = await foodsCollection.find(query).sort({ expiryDate: sortOrder }).toArray();
+            else if (sort) {
+                const sortOrder = sort === 'asc' ? 1 : -1;
+                result = await foodsCollection.find().sort({ expiryDate: sortOrder }).toArray();
+            }
+            else {
+                result = await foodsCollection.find().toArray();
+            }
             res.send(result)
         })
 
