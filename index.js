@@ -75,6 +75,14 @@ async function run() {
             res.send(result)
         })
 
+        // My food get request api
+        app.get('/my-foods', async (req, res) => {
+            const email = req.query.email;
+            const query = {'donor.email': email}
+            const result = await foodsCollection.find(query).toArray();
+            res.send(result)
+        })
+
 
     } finally {
         // Ensures that the client will close when you finish/error
