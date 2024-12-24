@@ -83,6 +83,15 @@ async function run() {
             res.send(result)
         })
 
+        // Deleting a food from the database
+        app.delete('/food/:id', async (req,res) => {
+            const { id } = req.params;
+            const query = { _id: new ObjectId(id) };
+            const result = await foodsCollection.deleteOne(query);
+            console.log(result);
+            res.send(result);
+        })
+
 
     } finally {
         // Ensures that the client will close when you finish/error
