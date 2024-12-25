@@ -10,7 +10,11 @@ const port = process.env.PORT || 9000
 
 // Middlewares
 app.use(cors({
-    origin: ['http://localhost:5173'],
+    origin: [
+        'http://localhost:5173',
+        'https://share-aa-meal.web.app',
+        'https://share-aa-meal.firebaseapp.com'
+    ],
     credentials: true
 }));
 app.use(express.json());
@@ -23,16 +27,12 @@ const verifyToken = (req, res, next) => {
     if (!token) {
         return res.status(401).send({ message: 'Unauthorized Access' });
     }
-
     // verifying the token
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
         if (err) {
             return res.status(401).send({ message: 'Unauthorized Access' });
         }
-
         req.user = decoded;
-
-
         next();
     })
 }
@@ -65,7 +65,8 @@ async function run() {
             res
                 .cookie('token', token, {
                     httpOnly: true,
-                    secure: false
+                    secure: process.env.NODE_ENV === "production",
+                    sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
                 })
                 .send({ success: true })
 
@@ -75,7 +76,8 @@ async function run() {
             res
                 .clearCookie('token', {
                     httpOnly: true,
-                    secure: false
+                    secure: process.env.NODE_ENV === "production",
+                    sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
                 })
                 .send({ success: true })
         })
@@ -117,7 +119,7 @@ async function run() {
         })
 
         // Updating data of a single food
-        app.patch('/food/:id', async (req, res) => {
+        app.patch('/food/:id', verifyToken,async (req, res) => {
             const { id } = req.params;
             const filter = { _id: new ObjectId(id) };
             const updateData = req.body;
