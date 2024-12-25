@@ -9,9 +9,33 @@ const port = process.env.PORT || 9000
 
 
 // Middlewares
-app.use(cors());
+app.use(cors({
+    origin: ['http://localhost:5173'],
+    credentials: true
+}));
 app.use(express.json());
 app.use(cookieParser());
+
+// custom middleware
+const verifyToken = (req, res, next) => {
+    const token = req.cookies?.token;
+
+    if (!token) {
+        return res.status(401).send({ message: 'Unauthorized Access' });
+    }
+
+    // verifying the token
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        if (err) {
+            return res.status(401).send({ message: 'Unauthorized Access' });
+        }
+
+        req.user = decoded;
+
+
+        next();
+    })
+}
 
 
 
@@ -40,11 +64,20 @@ async function run() {
 
             res
                 .cookie('token', token, {
-                httpOnly: true,
-                secure: false
-            })
+                    httpOnly: true,
+                    secure: false
+                })
                 .send({ success: true })
 
+        })
+
+        app.post('/logout', (req, res) => {
+            res
+                .clearCookie('token', {
+                    httpOnly: true,
+                    secure: false
+                })
+                .send({ success: true })
         })
 
         // Adding food to the food Collection
@@ -93,9 +126,14 @@ async function run() {
         })
 
         // My food get request api
-        app.get('/my-foods', async (req, res) => {
+        app.get('/my-foods', verifyToken,async (req, res) => {
             const email = req.query.email;
             const { requestEmail } = req.query;
+
+            if (req.user.email !== req.query.email && req.user.email !== req.query.requestEmail) {
+                return res.status(403).send({message: 'Forbidden Request'})
+            }
+
             let query = {}
             if (email) {
                 query = { 'donor.email': email }
