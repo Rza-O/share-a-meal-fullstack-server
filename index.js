@@ -81,7 +81,7 @@ async function run() {
         })
 
         // Adding food to the food Collection
-        app.post('/add-foods', async (req, res) => {
+        app.post('/add-foods',verifyToken, async (req, res) => {
             const data = req.body;
             console.log(data);
             const result = await foodsCollection.insertOne(data);
