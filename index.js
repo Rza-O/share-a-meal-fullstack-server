@@ -78,7 +78,14 @@ async function run() {
         // My food get request api
         app.get('/my-foods', async (req, res) => {
             const email = req.query.email;
-            const query = {'donor.email': email}
+            const { requestEmail } = req.query;
+            let query = {}
+            if (email) {
+                query = { 'donor.email': email }
+            }
+            else if (requestEmail) {
+                query = { 'requester.requesterEmail': requestEmail }
+            }
             const result = await foodsCollection.find(query).toArray();
             res.send(result)
         })
@@ -89,6 +96,26 @@ async function run() {
             const query = { _id: new ObjectId(id) };
             const result = await foodsCollection.deleteOne(query);
             console.log(result);
+            res.send(result);
+        })
+
+        // canceling request patch api
+        app.patch('/cancel-request/:id', async (req, res) => {
+            const { id } = req.params;
+            const query = { _id: new ObjectId(id) };
+            const updateData = {
+                $set: { status: 'available' },
+                $unset: {requester: ''}
+            }
+            const result = await foodsCollection.updateOne(query, updateData)
+            res.send(result);
+        })
+
+        // Featured foods GET API for homepage
+        app.get('/featured', async (req,res) => {
+            const filter = { status: 'available' };
+            const sorted = { foodQuantity: -1 }
+            const result = await foodsCollection.find(filter).sort(sorted).limit(6).toArray();
             res.send(result);
         })
 
