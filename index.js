@@ -83,7 +83,7 @@ async function run() {
         })
 
         // Adding food to the food Collection
-        app.post('/add-foods',verifyToken, async (req, res) => {
+        app.post('/add-foods', verifyToken, async (req, res) => {
             const data = req.body;
             console.log(data);
             const result = await foodsCollection.insertOne(data);
@@ -98,10 +98,10 @@ async function run() {
             if (search) {
                 query = { foodName: { $regex: search, $options: 'i' } }
                 result = await foodsCollection.find(query).toArray();
-            }
-            else if (sort) {
-                const sortOrder = sort === 'asc' ? 1 : -1;
-                result = await foodsCollection.find().sort({ expiryDate: sortOrder }).toArray();
+                if (sort) {
+                    const sortOrder = sort === 'asc' ? 1 : -1;
+                    result = await foodsCollection.find(query).sort({ expiryDate: sortOrder }).toArray();
+                }
             }
             else {
                 const filter = { status: 'available' }
@@ -119,7 +119,7 @@ async function run() {
         })
 
         // Updating data of a single food
-        app.patch('/food/:id', verifyToken,async (req, res) => {
+        app.patch('/food/:id', verifyToken, async (req, res) => {
             const { id } = req.params;
             const filter = { _id: new ObjectId(id) };
             const updateData = req.body;
@@ -128,24 +128,37 @@ async function run() {
         })
 
         // My food get request api
-        app.get('/my-foods', verifyToken,async (req, res) => {
-            const email = req.query.email;
+        app.get('/my-foods', verifyToken, async (req, res) => {
+            const { email } = req.query;
+
+            if (!email) {
+                return res.status(400).send({ message: 'Bad Request: Missing requestEmail in query parameters' });
+            }
+
+            if (req.user.email !== email) {
+                return res.status(403).send({ message: 'Forbidden Request: Emails do not match the authenticated user' });
+            }
+            const query = { 'donor.email': email };
+            const result = await foodsCollection.find(query).toArray();
+            res.send(result);
+        })
+        
+        
+        // My food get request api
+        app.get('/my-requests', verifyToken, async (req, res) => {
             const { requestEmail } = req.query;
 
-            if (req.user.email !== req.query.email && req.user.email !== req.query.requestEmail) {
-                return res.status(403).send({message: 'Forbidden Request'})
+            if (!requestEmail) {
+                return res.status(400).send({ message: 'Bad Request: Missing requestEmail in query parameters' });
             }
 
-            let query = {}
-            if (email) {
-                query = { 'donor.email': email }
+            if (req.user.email !== requestEmail) {
+                return res.status(403).send({ message: 'Forbidden Request: Emails do not match the authenticated user' });
             }
-            else if (requestEmail) {
-                query = { 'requester.requesterEmail': requestEmail }
-            }
+            const query = { 'requester.requesterEmail': requestEmail };
             const result = await foodsCollection.find(query).toArray();
-            res.send(result)
-        })
+            res.send(result);
+        });
 
         // Deleting a food from the database
         app.delete('/food/:id', async (req, res) => {
