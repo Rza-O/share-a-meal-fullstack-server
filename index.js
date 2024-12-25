@@ -1,5 +1,7 @@
 require('dotenv').config();
 const express = require('express');
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const cors = require('cors');
 const app = express();
@@ -7,8 +9,9 @@ const port = process.env.PORT || 9000
 
 
 // Middlewares
-app.use(express.json());
 app.use(cors());
+app.use(express.json());
+app.use(cookieParser());
 
 
 
@@ -29,6 +32,20 @@ async function run() {
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
         const foodsCollection = client.db('FoodsDB').collection('foods');
+
+        // Auth related Api
+        app.post('/jwt', (req, res) => {
+            const user = req.body;
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '6h' })
+
+            res
+                .cookie('token', token, {
+                httpOnly: true,
+                secure: false
+            })
+                .send({ success: true })
+
+        })
 
         // Adding food to the food Collection
         app.post('/add-foods', async (req, res) => {
@@ -52,7 +69,7 @@ async function run() {
                 result = await foodsCollection.find().sort({ expiryDate: sortOrder }).toArray();
             }
             else {
-                const filter = {status: 'available'}
+                const filter = { status: 'available' }
                 result = await foodsCollection.find(filter).toArray();
             }
             res.send(result)
@@ -91,7 +108,7 @@ async function run() {
         })
 
         // Deleting a food from the database
-        app.delete('/food/:id', async (req,res) => {
+        app.delete('/food/:id', async (req, res) => {
             const { id } = req.params;
             const query = { _id: new ObjectId(id) };
             const result = await foodsCollection.deleteOne(query);
@@ -105,14 +122,14 @@ async function run() {
             const query = { _id: new ObjectId(id) };
             const updateData = {
                 $set: { status: 'available' },
-                $unset: {requester: ''}
+                $unset: { requester: '' }
             }
             const result = await foodsCollection.updateOne(query, updateData)
             res.send(result);
         })
 
         // Featured foods GET API for homepage
-        app.get('/featured', async (req,res) => {
+        app.get('/featured', async (req, res) => {
             const filter = { status: 'available' };
             const sorted = { foodQuantity: -1 }
             const result = await foodsCollection.find(filter).sort(sorted).limit(6).toArray();
