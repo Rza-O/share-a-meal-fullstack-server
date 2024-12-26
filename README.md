@@ -115,13 +115,6 @@ The server will reload automatically on code changes.
 
 ---
 
-## Future Enhancements
-- Add support for email notifications.
-- Implement analytics for food donations and requests.
-- Optimize API responses with pagination.
-
----
-
 ## Contact
 For questions or feedback, please reach out at [shahreza.dev@gmail.com](mailto:shahreza.dev@gmail.com).
 
