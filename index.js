@@ -103,6 +103,10 @@ async function run() {
                     result = await foodsCollection.find(query).sort({ expiryDate: sortOrder }).toArray();
                 }
             }
+            else if (sort) {
+                const sortOrder = sort === 'asc' ? 1 : -1;
+                result = await foodsCollection.find(query).sort({ expiryDate: sortOrder }).toArray();
+            }
             else {
                 const filter = { status: 'available' }
                 result = await foodsCollection.find(filter).toArray();
@@ -185,7 +189,7 @@ async function run() {
         app.get('/featured', async (req, res) => {
             const filter = { status: 'available' };
             const sorted = { foodQuantity: -1 }
-            const result = await foodsCollection.find(filter).sort(sorted).limit(6).toArray();
+            const result = await foodsCollection.find(filter).sort(sorted).limit(8).toArray();
             res.send(result);
         })
 
